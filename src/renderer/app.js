@@ -196,6 +196,22 @@ function setupEventListeners() {
     });
 
     // Background settings
+    const uploadBgBtn = document.getElementById('uploadBgBtn');
+    if (uploadBgBtn) {
+        uploadBgBtn.addEventListener('click', () => {
+            SoundManager.play('click');
+            uploadBackground();
+        });
+    }
+
+    const resetBgBtn = document.getElementById('resetBgBtn');
+    if (resetBgBtn) {
+        resetBgBtn.addEventListener('click', () => {
+            SoundManager.play('click');
+            resetBackground();
+        });
+    }
+
     // Universal App Detection Toggle
     const detectionToggle = document.getElementById('appDetectionToggle');
     if (detectionToggle) {

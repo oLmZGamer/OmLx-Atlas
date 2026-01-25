@@ -61,3 +61,6 @@ This software is provided under a custom permission structure. By using or modif
 
 ---
 *Created with ❤️ for gamers.*
+
+---
+*ai was used in this project.*

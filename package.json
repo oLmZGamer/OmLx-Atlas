@@ -1,0 +1,46 @@
+{
+  "name": "omlx-atlas",
+  "version": "1.2.1",
+  "description": "A unified game library with cinematic console-style UI",
+  "main": "index.js",
+  "scripts": {
+    "start": "cmd /C \"set ELECTRON_RUN_AS_NODE=&& npx electron .\"",
+    "dev": "cmd /C \"set ELECTRON_RUN_AS_NODE=&& npx electron . --dev\"",
+    "dist": "electron-builder",
+    "pack": "electron-builder --dir"
+  },
+  "build": {
+    "appId": "com.omlx.atlas",
+    "productName": "OmLx Atlas",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "portable",
+      "icon": "assets/logo.png"
+    },
+    "files": [
+      "**/*",
+      "!dist/*"
+    ]
+  },
+  "keywords": [
+    "games",
+    "library",
+    "launcher",
+    "steam",
+    "epic",
+    "xbox"
+  ],
+  "author": "Game Library Team",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "dist": "^0.1.2",
+    "electron-store": "^10.0.0"
+  },
+  "devDependencies": {
+    "electron": "^34.0.0",
+    "electron-builder": "^26.4.0"
+  }
+}

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmLx Atlas</title>
+    <link rel="stylesheet" href="styles.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <!-- Dynamic Background -->
+    <div class="dynamic-background" id="dynamicBackground">
+        <div class="background-image" id="backgroundImage"></div>
+        <div class="background-overlay"></div>
+        <div class="noise-overlay"></div>
+    </div>
+
+    <!-- Title Bar -->
+    <div class="title-bar" id="titleBar">
+        <div class="title-bar-left">
+            <div class="app-logo">
+                <img src="../../assets/logo.png" alt="OmLx Atlas Logo"
+                    style="width: 44px; height: 44px; border-radius: 10px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.3); -webkit-app-region: no-drag;">
+            </div>
+            <span class="app-title">OmLx Atlas</span>
+        </div>
+        <div class="title-bar-center">
+            <div class="search-container">
+                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="M21 21l-4.35-4.35" />
+                </svg>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search games...">
+            </div>
+        </div>
+        <div class="title-bar-right">
+            <button class="title-btn" id="fullscreenBtn" title="Fullscreen">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                        d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                </svg>
+            </button>
+            <button class="title-btn" id="minimizeBtn" title="Minimize">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14" />
+                </svg>
+            </button>
+            <button class="title-btn" id="maximizeBtn" title="Maximize">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                </svg>
+            </button>
+            <button class="title-btn close-btn" id="closeBtn" title="Close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-view="all">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                    </svg>
+                    <span>All Games</span>
+                    <span class="count" id="allCount">0</span>
+                </button>
+                <button class="nav-item" data-view="favorites">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon
+                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    <span>Favorites</span>
+                    <span class="count" id="favCount">0</span>
+                </button>
+                <button class="nav-item" data-view="recent">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    <span>Recently Played</span>
+                </button>
+                <button class="nav-item" data-view="programs">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                    </svg>
+                    <span>Programs</span>
+                    <span class="count" id="programsCount">0</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-divider"></div>
+
+            <div class="launcher-filters">
+                <h3 class="filter-title">Launchers</h3>
+                <button class="launcher-filter active" data-launcher="all">
+                    <span class="launcher-dot all"></span>
+                    <span>All</span>
+                </button>
+                <button class="launcher-filter" data-launcher="steam">
+                    <span class="launcher-dot steam"></span>
+                    <span>Steam</span>
+                </button>
+                <button class="launcher-filter" data-launcher="epic">
+                    <span class="launcher-dot epic"></span>
+                    <span>Epic Games</span>
+                </button>
+                <button class="launcher-filter" data-launcher="xbox">
+                    <span class="launcher-dot xbox"></span>
+                    <span>Xbox / Game Pass</span>
+                </button>
+                <button class="launcher-filter" data-launcher="ea">
+                    <span class="launcher-dot ea"></span>
+                    <span>EA App</span>
+                </button>
+                <button class="launcher-filter" data-launcher="ubisoft">
+                    <span class="launcher-dot ubisoft"></span>
+                    <span>Ubisoft Connect</span>
+                </button>
+                <button class="launcher-filter" data-launcher="gog">
+                    <span class="launcher-dot gog"></span>
+                    <span>GOG Galaxy</span>
+                </button>
+                <button class="launcher-filter" data-launcher="desktop">
+                    <span class="launcher-dot desktop"></span>
+                    <span>Desktop Apps</span>
+                </button>
+                <button class="launcher-filter" data-launcher="manual">
+                    <span class="launcher-dot manual"></span>
+                    <span>Manual</span>
+                </button>
+            </div>
+
+            <div class="sidebar-actions">
+                <button class="action-btn primary" id="scanBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12a9 9 0 11-6.219-8.56" />
+                        <polyline points="21 3 21 9 15 9" />
+                    </svg>
+                    <span>Scan for Games</span>
+                </button>
+                <button class="action-btn" id="scanFolderBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                        <circle cx="12" cy="13" r="3" />
+                    </svg>
+                    <span>Scan Folder</span>
+                </button>
+                <button class="action-btn" id="addManualBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 8v8M8 12h8" />
+                    </svg>
+                    <span>Add Game</span>
+                </button>
+                <button class="action-btn" id="settingsBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                    </svg>
+                    <span>Settings</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Games Grid -->
+        <main class="games-area">
+            <div class="games-header">
+                <h1 class="section-title" id="sectionTitle">All Games</h1>
+                <div class="view-controls">
+                    <button class="view-btn active" data-size="medium" title="Medium Grid">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="14" y="14" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
+                        </svg>
+                    </button>
+                    <button class="view-btn" data-size="large" title="Large Grid">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="3" width="8" height="8" />
+                            <rect x="13" y="3" width="8" height="8" />
+                            <rect x="13" y="13" width="8" height="8" />
+                            <rect x="3" y="13" width="8" height="8" />
+                        </svg>
+                    </button>
+                    <select class="sort-select" id="sortSelect">
+                        <option value="name">Name (A-Z)</option>
+                        <option value="name-desc">Name (Z-A)</option>
+                        <option value="recent">Recently Played</option>
+                        <option value="launcher">Launcher</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="games-grid" id="gamesGrid">
+                <!-- Games will be inserted here -->
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading-state" id="loadingState">
+                <div class="loading-spinner"></div>
+                <p>Scanning for games...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-icon">
+                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <rect x="2" y="6" width="20" height="12" rx="2" />
+                        <line x1="6" y1="12" x2="6" y2="12" />
+                        <line x1="10" y1="12" x2="10" y2="12" />
+                        <circle cx="17" cy="12" r="2" />
+                    </svg>
+                </div>
+                <h2>No Games Found</h2>
+                <p>Click "Scan for Games" to detect installed games or add them manually.</p>
+                <button class="action-btn primary" id="emptyStateBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12a9 9 0 11-6.219-8.56" />
+                        <polyline points="21 3 21 9 15 9" />
+                    </svg>
+                    <span>Scan for Games</span>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Game Details Modal -->
+    <div class="game-modal" id="gameModal">
+        <div class="modal-background" id="modalBackground"></div>
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+            </button>
+
+            <div class="modal-game-info">
+                <div class="modal-cover" id="modalCover"></div>
+                <div class="modal-details">
+                    <div class="modal-launcher-badge" id="modalLauncher">
+                        <span class="launcher-icon"></span>
+                        <span class="launcher-name"></span>
+                    </div>
+                    <h1 class="modal-title" id="modalTitle">Game Title</h1>
+                    <p class="modal-path" id="modalPath">Install path</p>
+
+                    <!-- Statistics Panel -->
+                    <div class="stats-panel">
+                        <div class="stats-header">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                <line x1="3" y1="9" x2="21" y2="9" />
+                                <line x1="9" y1="21" x2="9" y2="9" />
+                            </svg>
+                            <span>Game Statistics</span>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">⏱️</div>
+                                <div class="stat-label">TIME PLAYED</div>
+                                <div class="stat-value" id="statPlayTime">0 minutes</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">📅</div>
+                                <div class="stat-label">LAST PLAYED</div>
+                                <div class="stat-value" id="statLastPlayed">Never</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">🏆</div>
+                                <div class="stat-label">ACHIEVEMENTS</div>
+                                <div class="stat-value" id="statAchievements">0 / 0</div>
+                                <div class="achievement-progress-container">
+                                    <div class="achievement-progress-bar" id="achievementProgress"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stats-footer">
+                            <button class="text-btn" id="refreshStatsBtn">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M23 4v6h-6" />
+                                    <path d="M1 20v-6h6" />
+                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                                </svg>
+                                <span>Refresh Statistics</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <div class="modal-launcher-selector">
+                            <label>Launcher Category:</label>
+                            <select id="launcherSelect" class="launcher-dropdown">
+                                <option value="steam">Steam</option>
+                                <option value="epic">Epic Games</option>
+                                <option value="xbox">Xbox / Game Pass</option>
+                                <option value="ea">EA App</option>
+                                <option value="ubisoft">Ubisoft Connect</option>
+                                <option value="gog">GOG</option>
+                                <option value="desktop">Desktop Apps</option>
+                                <option value="manual">Manual/Other</option>
+                            </select>
+                            <button class="modal-btn" id="updateLauncherBtn">Update</button>
+                        </div>
+                        <button class="modal-btn primary" id="launchBtn">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polygon points="5 3 19 12 5 21 5 3" />
+                            </svg>
+                            <span>Launch Game</span>
+                        </button>
+                        <button class="modal-btn" id="favoriteBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polygon
+                                    points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                            </svg>
+                            <span>Favorite</span>
+                        </button>
+                        <button class="modal-btn" id="searchArtworkBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="11" cy="11" r="8" />
+                                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            </svg>
+                            <span>Find Artwork Online</span>
+                        </button>
+                        <button class="modal-btn" id="openLocationBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                            </svg>
+                            <span>Open Location</span>
+                        </button>
+                        <button class="modal-btn" id="openStoreBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="9" cy="21" r="1" />
+                                <circle cx="20" cy="21" r="1" />
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                            </svg>
+                            <span>Open in Store</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-secondary-actions">
+                        <button class="text-btn" id="changeCoverBtn">Change Cover</button>
+                        <button class="text-btn danger" id="deleteGameBtn">Remove from Library</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-overlay" id="settingsOverlay"></div>
+        <div class="settings-content">
+            <div class="settings-header">
+                <h2>Settings</h2>
+                <button class="close-settings" id="closeSettings">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="settings-body">
+                <section class="settings-section">
+                    <h3>Appearance</h3>
+                    <div class="setting-item">
+                        <label>App Theme</label>
+                        <div class="theme-grid">
+                            <button class="theme-option active" data-theme="default" style="--theme-color: #8B5CF6;">
+                                <span class="theme-preview"></span>
+                                <span class="theme-name">Violet</span>
+                            </button>
+                            <button class="theme-option" data-theme="emerald" style="--theme-color: #10b981;">
+                                <span class="theme-preview"></span>
+                                <span class="theme-name">Emerald</span>
+                            </button>
+                            <button class="theme-option" data-theme="amber" style="--theme-color: #f59e0b;">
+                                <span class="theme-preview"></span>
+                                <span class="theme-name">Amber</span>
+                            </button>
+                            <button class="theme-option" data-theme="crimson" style="--theme-color: #ef4444;">
+                                <span class="theme-preview"></span>
+                                <span class="theme-name">Crimson</span>
+                            </button>
+                            <button class="theme-option" data-theme="azure" style="--theme-color: #3b82f6;">
+                                <span class="theme-preview"></span>
+                                <span class="theme-name">Azure</span>
+                            </button>
+                            <button class="theme-option" data-theme="midnight" style="--theme-color: #1e293b;">
+                                <span class="theme-preview"></span>
+                                <span class="theme-name">Midnight</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="sidebar-divider" style="margin: 24px 0;"></div>
+
+                <section class="settings-section">
+                    <h3>Background</h3>
+                    <div class="setting-item">
+                        <label>App Background</label>
+                        <div class="background-settings">
+                            <div class="selected-bg-preview" id="selectedBgPreview">
+                                <span>No custom background</span>
+                            </div>
+                            <div class="bg-actions">
+                                <button class="action-btn primary" id="uploadBgBtn">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="17 8 12 3 7 8" />
+                                        <line x1="12" y1="3" x2="12" y2="15" />
+                                    </svg>
+                                    <span>Upload Image</span>
+                                </button>
+                                <button class="action-btn" id="resetBgBtn">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                                        <path d="M3 3v5h5" />
+                                    </svg>
+                                    <span>Reset to Default</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="sidebar-divider" style="margin: 24px 0;"></div>
+
+                <section class="settings-section">
+                    <h3>Experimental Features</h3>
+                    <div class="setting-item flex-between">
+                        <div>
+                            <label>Universal App Detection (Beta)</label>
+                            <p style="font-size: 11px; color: var(--text-tertiary); margin-top: 4px;">Allows detection
+                                of
+                                non-gaming desktop applications (Spotify, Discord, etc.)</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="appDetectionToggle">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

@@ -9,7 +9,7 @@ A high-performance, unified game library with a cinematic, console-style interfa
 OmLx Atlas is packed with features designed to give you the ultimate gaming experience:
 
 ### 🧩 Launcher Integration
-- **Universal Detection**: Automatically find and import games from **Steam**, **Epic Games**, **Xbox / Game Pass**, **EA App**, **Ubisoft Connect**, and **GOG Galaxy**.
+- **Universal Detection**: Automatically find and import games from **Steam**, **Epic Games**, **Xbox / Game Pass**, **EA App**, **Ubisoft Connect**, and **GOG Galaxy**. 
 - **(Beta) Universal App Detection**: Enable experimental detection for non-gaming apps like Spotify, Discord, and creative software.
 - **Manual Additions**: Easily add any `.exe` or application shortcut that isn't automatically detected.
 - **Custom Folder Scanning**: Point the app to specific directories to scan for portable games or standalone apps.
@@ -21,7 +21,7 @@ OmLx Atlas is packed with features designed to give you the ultimate gaming expe
 - **Theme System**: Choose from multiple curated themes including **Violet (Default)**, **Emerald**, **Amber**, **Crimson**, **Azure**, and **Midnight**.
 - **Custom Wallpapers**: Upload your own background images to personalize the dashboard.
 
-### 📊 Built-in Game Tracking
+### 📊 Built-in Game Tracking (Implemented but under refinement)
 - **Playtime Tracking**: Automatically monitors how long you spend in each game.
 - **Last Played**: Keeps track of your most recent gaming sessions.
 - **Achievement Integration**: View your progress and achievements for supported games directly in the app.
@@ -39,6 +39,11 @@ OmLx Atlas is packed with features designed to give you the ultimate gaming expe
 - **Window Controls**: Support for Fullscreen, Minimize, and customizable window states.
 - **Sound Effects**: Immersive audio feedback for navigation, clicking, and launching games.
 
+---
+### Notes
+
+- **Ai was used in this project.**
+- **Detecting Games/apps might detect exe files that are not actually games.**
 ---
 
 ## 📜 License & Usage Rights
@@ -62,5 +67,3 @@ This software is provided under a custom permission structure. By using or modif
 ---
 *Created with ❤️ for gamers.*
 
----
-*ai was used in this project.*

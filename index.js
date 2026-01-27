@@ -187,6 +187,55 @@ function setupIPCHandlers() {
         }
         return [];
     });
+
+    // NEW: Update itemType (game vs app)
+    ipcMain.handle('games:updateItemType', async (event, gameId, itemType) => {
+        return gameDatabase.updateItemType(gameId, itemType);
+    });
+
+    // NEW: Refresh stats from launcher (Steam, etc.)
+    ipcMain.handle('games:refreshStats', async (event, game) => {
+        // For now, this is a placeholder. In the future, this would:
+        // 1. Fetch fresh stats from launcher APIs (Steam, Epic, etc.)
+        // 2. Update playtime, last played, achievements
+        // 3. Mark statsSource as 'launcher' if successful
+        console.log(`Refreshing stats for ${game.name} from ${game.launcher}...`);
+        
+        // TODO: Implement launcher-specific stat fetching when APIs are available
+        // For now, return current game data
+        return gameDatabase.getGame(game.id);
+    });
+
+    // NEW: Clear all games from database
+    ipcMain.handle('games:clearAll', async () => {
+        const { response } = await dialog.showMessageBox(mainWindow, {
+            type: 'warning',
+            title: 'Delete All Games?',
+            message: 'Are you sure you want to delete all games from your library?',
+            detail: 'This action cannot be undone. Your actual game files will NOT be deleted.',
+            buttons: ['Cancel', 'Yes, Delete All'],
+            defaultId: 0,
+            cancelId: 0
+        });
+
+        if (response === 1) {
+            gameDatabase.clearAllGames();
+            console.log('Cleared all games from database');
+            return { success: true, cleared: true };
+        }
+        return { success: true, cleared: false };
+    });
+
+    // NEW: Open external URL (Feedback button, etc.)
+    ipcMain.handle('shell:openExternal', async (event, url) => {
+        try {
+            await shell.openExternal(url);
+            return { success: true };
+        } catch (error) {
+            console.error('Failed to open external URL:', error);
+            return { success: false, error: error.message };
+        }
+    });
 }
 
 async function launchGame(game) {

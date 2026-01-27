@@ -185,6 +185,31 @@ function setupEventListeners() {
     document.getElementById('closeSettings').addEventListener('click', closeSettings);
     document.getElementById('settingsOverlay').addEventListener('click', closeSettings);
 
+    // NEW: Feedback button
+    const feedbackBtn = document.getElementById('feedbackBtn');
+    if (feedbackBtn) {
+        feedbackBtn.addEventListener('click', () => {
+            SoundManager.play('click');
+            window.electronAPI.openExternal('https://omlxstudios.xyz/#contact');
+        });
+    }
+
+    // NEW: Clear all games button
+    const clearAllGamesBtn = document.getElementById('clearAllGamesBtn');
+    if (clearAllGamesBtn) {
+        clearAllGamesBtn.addEventListener('click', async () => {
+            SoundManager.play('click');
+            const result = await window.electronAPI.clearAllGames();
+            if (result.cleared) {
+                allGames = [];
+                filterAndRenderGames();
+                showToast('All games removed from library', 'success');
+            } else {
+                showToast('Cancelled', 'info');
+            }
+        });
+    }
+
     // Theme options
     document.querySelectorAll('.theme-option').forEach(option => {
         option.addEventListener('click', () => {
@@ -334,6 +359,12 @@ function filterAndRenderGames(preserveScroll = false) {
         displayedCount = 60;
     }
 
+    // NEW: Handle 'taste' view separately (analytics, not a filter)
+    if (currentView === 'taste') {
+        renderYourTasteView();
+        return;
+    }
+
     let games = [...allGames];
 
     if (currentView === 'favorites') {
@@ -341,7 +372,8 @@ function filterAndRenderGames(preserveScroll = false) {
     } else if (currentView === 'recent') {
         games = games.filter(g => g.lastPlayed).sort((a, b) => new Date(b.lastPlayed) - new Date(a.lastPlayed));
     } else if (currentView === 'programs') {
-        games = games.filter(g => g.launcher === 'desktop' || g.launcher === 'manual');
+        // NEW: Filter by itemType='app' instead of launcher
+        games = games.filter(g => g.itemType === 'app');
     }
 
     if (!appDetectionEnabled) {
@@ -603,11 +635,34 @@ function openGameModal(game) {
 }
 
 function updateStatsDisplay(game) {
-    document.getElementById('statPlayTime').textContent = formatPlayTime(game.playTime?.totalMinutes || 0);
-    document.getElementById('statLastPlayed').textContent = formatRelativeTime(game.lastPlayed);
+    const statsSource = game.statsSource || {
+        playtimeSource: 'unknown',
+        lastPlayedSource: 'unknown',
+        achievementsSource: 'unknown'
+    };
 
+    // Update playtime with source label
+    const playtimeEl = document.getElementById('statPlayTime');
+    const playtimeText = formatPlayTime(game.playTime?.totalMinutes || 0);
+    const playtimeSource = statsSource.playtimeSource || 'unknown';
+    playtimeEl.textContent = playtimeText;
+    playtimeEl.title = `Source: ${playtimeSource === 'launcher' ? 'Launcher API' : 'Atlas Tracked'}`;
+    playtimeEl.style.cursor = 'help';
+
+    // Update last played with source label
+    const lastPlayedEl = document.getElementById('statLastPlayed');
+    lastPlayedEl.textContent = formatRelativeTime(game.lastPlayed);
+    const lastPlayedSource = statsSource.lastPlayedSource || 'unknown';
+    lastPlayedEl.title = `Source: ${lastPlayedSource === 'launcher' ? 'Launcher API' : 'Atlas Tracked'}`;
+    lastPlayedEl.style.cursor = 'help';
+
+    // Update achievements with source label
     const ach = game.achievements || { unlocked: 0, total: 0 };
-    document.getElementById('statAchievements').textContent = `${ach.unlocked} / ${ach.total}`;
+    const achEl = document.getElementById('statAchievements');
+    achEl.textContent = `${ach.unlocked} / ${ach.total}`;
+    const achievementsSource = statsSource.achievementsSource || 'unknown';
+    achEl.title = `Source: ${achievementsSource === 'launcher' ? 'Launcher API' : achievementsSource === 'atlas' ? 'Atlas Tracked' : 'Unknown'}`;
+    achEl.style.cursor = 'help';
 
     const progress = ach.total > 0 ? (ach.unlocked / ach.total) * 100 : 0;
     document.getElementById('achievementProgress').style.width = `${progress}%`;
@@ -927,6 +982,178 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+// ===== YOUR TASTE ANALYTICS =====
+// Get top 3 most-played games
+function getTopGamesByPlaytime() {
+    return [...allGames]
+        .filter(g => g.playTime && g.playTime.totalMinutes > 0)
+        .sort((a, b) => (b.playTime?.totalMinutes || 0) - (a.playTime?.totalMinutes || 0))
+        .slice(0, 3);
+}
+
+// Get top launchers by playtime
+function getTopLaunchersByPlaytime() {
+    const launcherStats = {};
+
+    allGames.forEach(game => {
+        const launcher = game.launcher || 'Unknown';
+        const playtime = game.playTime?.totalMinutes || 0;
+        if (!launcherStats[launcher]) {
+            launcherStats[launcher] = { playtime: 0, gameCount: 0 };
+        }
+        launcherStats[launcher].playtime += playtime;
+        launcherStats[launcher].gameCount += 1;
+    });
+
+    return Object.entries(launcherStats)
+        .map(([launcher, stats]) => ({ launcher, ...stats }))
+        .filter(l => l.playtime > 0)
+        .sort((a, b) => b.playtime - a.playtime)
+        .slice(0, 5);
+}
+
+// Render Your Taste view (analytics overview)
+function renderYourTasteView() {
+    gamesGrid.innerHTML = '';
+    gamesGrid.style.display = 'grid';
+
+    const tasteContainer = document.createElement('div');
+    tasteContainer.style.gridColumn = '1 / -1';
+    tasteContainer.style.padding = '20px';
+    tasteContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.02)';
+    tasteContainer.style.borderRadius = '12px';
+    tasteContainer.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+
+    const topGames = getTopGamesByPlaytime();
+    const topLaunchers = getTopLaunchersByPlaytime();
+
+    // Top Games Section
+    if (topGames.length > 0) {
+        const gamesSection = document.createElement('div');
+        gamesSection.style.marginBottom = '30px';
+
+        const gamesTitle = document.createElement('h3');
+        gamesTitle.textContent = '🎮 Your Most Played Games';
+        gamesTitle.style.color = 'var(--accent-color)';
+        gamesTitle.style.marginBottom = '15px';
+        gamesTitle.style.fontSize = '14px';
+        gamesSection.appendChild(gamesTitle);
+
+        const gamesList = document.createElement('div');
+        gamesList.style.display = 'flex';
+        gamesList.style.flexDirection = 'column';
+        gamesList.style.gap = '10px';
+
+        topGames.forEach((game, idx) => {
+            const gameItem = document.createElement('div');
+            gameItem.style.display = 'flex';
+            gameItem.style.alignItems = 'center';
+            gameItem.style.padding = '12px';
+            gameItem.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+            gameItem.style.borderRadius = '8px';
+            gameItem.style.cursor = 'pointer';
+            gameItem.style.transition = 'all 0.3s ease';
+
+            gameItem.addEventListener('mouseenter', () => {
+                gameItem.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                gameItem.style.transform = 'translateX(5px)';
+            });
+
+            gameItem.addEventListener('mouseleave', () => {
+                gameItem.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                gameItem.style.transform = 'translateX(0)';
+            });
+
+            gameItem.addEventListener('click', () => openGameModal(game));
+
+            const rank = document.createElement('span');
+            rank.textContent = `#${idx + 1}`;
+            rank.style.marginRight = '12px';
+            rank.style.color = 'var(--accent-color)';
+            rank.style.fontWeight = 'bold';
+            rank.style.minWidth = '30px';
+
+            const gameInfo = document.createElement('div');
+            gameInfo.style.flex = '1';
+
+            const gameName = document.createElement('div');
+            gameName.textContent = game.name;
+            gameName.style.fontWeight = '500';
+            gameName.style.marginBottom = '4px';
+
+            const gameTime = document.createElement('div');
+            gameTime.textContent = formatPlayTime(game.playTime?.totalMinutes || 0);
+            gameTime.style.fontSize = '12px';
+            gameTime.style.color = 'var(--text-secondary)';
+
+            gameInfo.appendChild(gameName);
+            gameInfo.appendChild(gameTime);
+
+            gameItem.appendChild(rank);
+            gameItem.appendChild(gameInfo);
+            gamesList.appendChild(gameItem);
+        });
+
+        gamesSection.appendChild(gamesList);
+        tasteContainer.appendChild(gamesSection);
+    }
+
+    // Top Launchers Section
+    if (topLaunchers.length > 0) {
+        const launchersSection = document.createElement('div');
+
+        const launchersTitle = document.createElement('h3');
+        launchersTitle.textContent = '🚀 Favorite Platforms';
+        launchersTitle.style.color = 'var(--accent-color)';
+        launchersTitle.style.marginBottom = '15px';
+        launchersTitle.style.fontSize = '14px';
+        launchersSection.appendChild(launchersTitle);
+
+        const launchersList = document.createElement('div');
+        launchersList.style.display = 'grid';
+        launchersList.style.gridTemplateColumns = 'repeat(auto-fit, minmax(150px, 1fr))';
+        launchersList.style.gap = '10px';
+
+        topLaunchers.forEach((item) => {
+            const launcherItem = document.createElement('div');
+            launcherItem.style.padding = '12px';
+            launcherItem.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+            launcherItem.style.borderRadius = '8px';
+            launcherItem.style.textAlign = 'center';
+            launcherItem.style.transition = 'all 0.3s ease';
+
+            launcherItem.addEventListener('mouseenter', () => {
+                launcherItem.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                launcherItem.style.transform = 'translateY(-3px)';
+            });
+
+            launcherItem.addEventListener('mouseleave', () => {
+                launcherItem.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                launcherItem.style.transform = 'translateY(0)';
+            });
+
+            const launcherName = document.createElement('div');
+            launcherName.textContent = launcherConfig[item.launcher]?.name || item.launcher;
+            launcherName.style.fontWeight = '500';
+            launcherName.style.marginBottom = '8px';
+
+            const launcherStats = document.createElement('div');
+            launcherStats.style.fontSize = '12px';
+            launcherStats.style.color = 'var(--text-secondary)';
+            launcherStats.innerHTML = `${formatPlayTime(item.playtime)} <br> ${item.gameCount} game${item.gameCount > 1 ? 's' : ''}`;
+
+            launcherItem.appendChild(launcherName);
+            launcherItem.appendChild(launcherStats);
+            launchersList.appendChild(launcherItem);
+        });
+
+        launchersSection.appendChild(launchersList);
+        tasteContainer.appendChild(launchersSection);
+    }
+
+    gamesGrid.appendChild(tasteContainer);
 }
 
 function formatPlayTime(minutes) {

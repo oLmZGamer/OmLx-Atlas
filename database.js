@@ -18,6 +18,9 @@ class GameDatabase {
         // Initialize games file if it doesn't exist
         if (!fs.existsSync(this.gamesFile)) {
             this.saveGames([]);
+        } else {
+            // MIGRATION: Add missing fields to legacy games
+            this.migrateGamesSchema();
         }
 
         // Initialize settings file with defaults
@@ -31,6 +34,45 @@ class GameDatabase {
                 autoScan: true
             };
             this.saveSettings(defaultSettings);
+        }
+    }
+
+    // MIGRATION: Ensure all games have new fields (itemType, statsSource)
+    migrateGamesSchema() {
+        try {
+            const games = this.loadGames();
+            let needsSave = false;
+
+            for (const game of games) {
+                // Add itemType if missing (based on launcher)
+                if (!game.itemType) {
+                    if (['steam', 'epic', 'xbox', 'ea', 'ubisoft', 'gog'].includes(game.launcher)) {
+                        game.itemType = 'game';
+                    } else if (['desktop', 'manual'].includes(game.launcher)) {
+                        game.itemType = 'app';
+                    } else {
+                        game.itemType = 'game'; // Default to game if unsure
+                    }
+                    needsSave = true;
+                }
+
+                // Add statsSource if missing
+                if (!game.statsSource) {
+                    game.statsSource = {
+                        playtimeSource: game.launcher === 'steam' ? 'unknown' : 'atlas', // Steam could have launcher data
+                        lastPlayedSource: 'atlas',
+                        achievementsSource: game.launcher === 'steam' ? 'unknown' : 'atlas'
+                    };
+                    needsSave = true;
+                }
+            }
+
+            if (needsSave) {
+                console.log('Migrating games.json schema to include itemType and statsSource...');
+                this.saveGames(games);
+            }
+        } catch (error) {
+            console.error('Migration error:', error);
         }
     }
 
@@ -93,14 +135,30 @@ class GameDatabase {
                 lastPlayed: game.lastPlayed ? new Date(game.lastPlayed).toISOString() : null,
                 addedAt: game.addedAt || new Date().toISOString(),
                 playTime: game.playTime || { totalMinutes: 0, sessions: [] },
-                achievements: game.achievements || { unlocked: 0, total: 0, list: [], lastUpdated: null }
+                achievements: game.achievements || { unlocked: 0, total: 0, list: [], lastUpdated: null },
+                // NEW: Stats source tracking (where data comes from)
+                statsSource: {
+                    playtimeSource: game.statsSource?.playtimeSource || 'unknown', // 'launcher' | 'atlas' | 'unknown'
+                    lastPlayedSource: game.statsSource?.lastPlayedSource || 'unknown',
+                    achievementsSource: game.statsSource?.achievementsSource || 'unknown'
+                },
+                // NEW: itemType field (game vs app)
+                itemType: game.itemType || 'game'
             };
 
             if (existingIndex !== -1) {
-                // Preserve stats if existing
-                gameToSave.playTime = games[existingIndex].playTime || gameToSave.playTime;
-                gameToSave.achievements = games[existingIndex].achievements || gameToSave.achievements;
-                gameToSave.lastPlayed = games[existingIndex].lastPlayed || gameToSave.lastPlayed;
+                // IMPORTANT: Preserve user overrides
+                const existing = games[existingIndex];
+                gameToSave.isFavorite = existing.isFavorite !== undefined ? existing.isFavorite : false;
+                gameToSave.coverImage = existing.coverImage || gameToSave.coverImage;
+                gameToSave.backgroundImage = existing.backgroundImage || gameToSave.backgroundImage;
+                gameToSave.itemType = existing.itemType || gameToSave.itemType; // Preserve user's itemType override
+                
+                // Preserve playtime and achievements if user has already tracked them
+                gameToSave.playTime = existing.playTime || gameToSave.playTime;
+                gameToSave.achievements = existing.achievements || gameToSave.achievements;
+                gameToSave.lastPlayed = existing.lastPlayed || gameToSave.lastPlayed;
+                
                 games[existingIndex] = gameToSave;
             } else {
                 games.push(gameToSave);
@@ -219,6 +277,39 @@ class GameDatabase {
         if (index !== -1) {
             games[index].launcher = newLauncher;
             games[index].manualLauncherOverride = true; // Track manual changes
+            this.saveGames(games);
+            return this.getGame(gameId);
+        }
+        return null;
+    }
+
+    // NEW: Update itemType (game vs app)
+    updateItemType(gameId, itemType) {
+        const games = this.loadGames();
+        const index = games.findIndex(g => g.id === gameId);
+
+        if (index !== -1) {
+            games[index].itemType = itemType; // 'game' | 'app'
+            this.saveGames(games);
+            return this.getGame(gameId);
+        }
+        return null;
+    }
+
+    // NEW: Update stats source labels
+    updateStatsSource(gameId, sourceInfo) {
+        const games = this.loadGames();
+        const index = games.findIndex(g => g.id === gameId);
+
+        if (index !== -1) {
+            if (!games[index].statsSource) {
+                games[index].statsSource = {
+                    playtimeSource: 'unknown',
+                    lastPlayedSource: 'unknown',
+                    achievementsSource: 'unknown'
+                };
+            }
+            games[index].statsSource = { ...games[index].statsSource, ...sourceInfo };
             this.saveGames(games);
             return this.getGame(gameId);
         }

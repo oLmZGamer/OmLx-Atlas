@@ -3,10 +3,120 @@ const path = require('path');
 const { exec, execSync } = require('child_process');
 const os = require('os');
 
+// ===== LAUNCHER STATS PROVIDER INTERFACE =====
+// This interface defines how to fetch stats (playtime, achievements, lastPlayed) from launcher APIs.
+// Implement this interface for each launcher (Steam, Epic, EA, Ubisoft, Xbox, GOG).
+
+class LauncherStatsProvider {
+    /**
+     * Get stats for a game from the launcher's API/data sources.
+     * @param {Object} game - Game object with launcher-specific IDs
+     * @returns {Promise<Object>} { playtimeMinutes?, lastPlayed?, achievements?, source }
+     *   - If data is available: { playtimeMinutes: 100, lastPlayed: "2024-01-27", achievements: {...}, source: 'launcher' }
+     *   - If data is NOT available: { source: 'unknown' } (do not fake data)
+     */
+    async getStats(game) {
+        throw new Error('getStats() must be implemented by subclass');
+    }
+}
+
+// STEAM STATS PROVIDER (Planned - requires API key and SteamID64)
+class SteamStatsProvider extends LauncherStatsProvider {
+    constructor(apiKey = null, steamId64 = null) {
+        super();
+        this.apiKey = apiKey;
+        this.steamId64 = steamId64;
+        // TODO: Steam Web API endpoints (when key + steamId are available)
+        // - IPlayerService/GetOwnedGames -> playtime_forever
+        // - ISteamUserStats/GetPlayerAchievements -> achievement data
+    }
+
+    async getStats(game) {
+        // If we don't have credentials, we can't fetch Steam stats
+        if (!this.apiKey || !this.steamId64) {
+            console.log(`[Steam] Missing API key or SteamID64. Cannot fetch stats for ${game.name}.`);
+            return { source: 'unknown', reason: 'Missing Steam API credentials' };
+        }
+
+        try {
+            const steamAppId = game.steamAppId || game.id.replace('steam_', '');
+            
+            // TODO: Implement actual Steam API calls here
+            // Example structure:
+            // const playtimeUrl = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${this.apiKey}&steamid=${this.steamId64}&appids_filter=[${steamAppId}]`;
+            // const achievementsUrl = `https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key=${this.apiKey}&steamid=${this.steamId64}&appid=${steamAppId}`;
+            
+            console.log(`[Steam] TODO: Implement Steam Web API stats fetching for app ${steamAppId}`);
+            
+            return { 
+                source: 'unknown', 
+                reason: 'Steam API implementation pending (requires key + SteamID64 in settings)'
+            };
+        } catch (error) {
+            console.error(`[Steam] Error fetching stats for ${game.name}:`, error.message);
+            return { source: 'unknown', error: error.message };
+        }
+    }
+}
+
+// EPIC GAMES STATS PROVIDER (Stub - Epic API is not public)
+class EpicStatsProvider extends LauncherStatsProvider {
+    async getStats(game) {
+        // Epic Games does not have a public API for stats
+        console.log(`[Epic] No public API available. Falling back to Atlas-tracked stats.`);
+        return { source: 'unknown', reason: 'Epic Games does not provide public stats API' };
+    }
+}
+
+// XBOX STATS PROVIDER (Stub - requires Xbox Live authentication)
+class XboxStatsProvider extends LauncherStatsProvider {
+    async getStats(game) {
+        // Xbox stats require Xbox Live authentication (complex)
+        console.log(`[Xbox] Xbox Live authentication required. Falling back to Atlas-tracked stats.`);
+        return { source: 'unknown', reason: 'Xbox stats require authentication' };
+    }
+}
+
+// GOG STATS PROVIDER (Stub - GOG doesn't expose user stats publicly)
+class GOGStatsProvider extends LauncherStatsProvider {
+    async getStats(game) {
+        // GOG Galaxy stores stats locally but doesn't have a public API
+        console.log(`[GOG] No public API available. Falling back to Atlas-tracked stats.`);
+        return { source: 'unknown', reason: 'GOG does not provide public stats API' };
+    }
+}
+
+// EA STATS PROVIDER (Stub - EA API is restricted)
+class EAStatsProvider extends LauncherStatsProvider {
+    async getStats(game) {
+        // EA API requires OAuth and is not easily accessible
+        console.log(`[EA] EA API not accessible. Falling back to Atlas-tracked stats.`);
+        return { source: 'unknown', reason: 'EA API requires developer access' };
+    }
+}
+
+// UBISOFT STATS PROVIDER (Stub - Ubisoft API is restricted)
+class UbisoftStatsProvider extends LauncherStatsProvider {
+    async getStats(game) {
+        console.log(`[Ubisoft] Ubisoft API not accessible. Falling back to Atlas-tracked stats.`);
+        return { source: 'unknown', reason: 'Ubisoft API requires developer access' };
+    }
+}
+
 class GameScanner {
     constructor(database) {
         this.database = database;
         this.homeDir = os.homedir();
+        
+        // Initialize stats providers (TODO: inject Steam credentials from settings)
+        this.statsProviders = {
+            steam: new SteamStatsProvider(),
+            epic: new EpicStatsProvider(),
+            xbox: new XboxStatsProvider(),
+            ea: new EAStatsProvider(),
+            ubisoft: new UbisoftStatsProvider(),
+            gog: new GOGStatsProvider()
+        };
     }
 
     async scanAllLaunchers() {
@@ -56,61 +166,140 @@ class GameScanner {
         }
     }
 
+    // NEW: Fetch and update stats from launcher APIs
+    async fetchLauncherStats(game) {
+        if (!this.statsProviders[game.launcher]) {
+            console.log(`[${game.launcher}] No stats provider available.`);
+            return { source: 'unknown' };
+        }
+
+        const provider = this.statsProviders[game.launcher];
+        const stats = await provider.getStats(game);
+
+        if (stats.source === 'launcher') {
+            // Success: Got data from launcher API
+            console.log(`[${game.launcher}] Got stats for ${game.name}`);
+            return stats;
+        } else {
+            // Fallback to Atlas-tracked stats
+            console.log(`[${game.launcher}] Falling back to Atlas-tracked stats for ${game.name}`);
+            return {
+                source: 'atlas',
+                playtimeMinutes: game.playTime?.totalMinutes || 0,
+                lastPlayed: game.lastPlayed,
+                achievements: game.achievements
+            };
+        }
+    }
+
     isValidAppName(exeName, folderPath) {
         const name = exeName.toLowerCase();
         const folder = folderPath.toLowerCase();
 
-        // BLACKLIST: Auto-reject these patterns
-        const rejectPatterns = [
-            /^unins\d*\.exe$/,                    // Uninstallers
-            /^setup.*\.exe$/,                      // Installers
-            /install/i,                             // Install scripts
-            /update/i,                              // Updaters
-            /crash.*report/i,                       // Crash reporters
-            /^[a-f0-9]{8,}\.exe$/i,                // GUID-like names
-            /\d{6,}/,                             // 6+ consecutive digits
-            /_{3,}/,                              // Multiple underscores
-            /-{3,}/,                              // Multiple dashes
-            /\$\{.*\}/,                           // Template variables
-            /helper/i, /service/i, /vcredist/i, /dotnet/i, /overlay/i,
-            /manual/i, /readme/i, /license/i, /diagnostic/i, /troubleshoot/i,
-            /security/i, /protection/i, /scanner/i, /antivirus/i, /firewall/i,
-            /edge/i, /cortana/i, /searchui/i, /dwm/i, /vbox/i, /vmware/i
+        // ===== HARD EXCLUSIONS =====
+        // 1. WINDOWS SYSTEM FOLDERS - Never scan these
+        const systemFolders = [
+            'c:\\windows',
+            'c:\\programdata',
+            'c:\\system volume information',
+            'c:\\$recycle.bin',
+            'winsx',
+            'system32',
+            'syswow64',
+            'drivers',
+            'winsxs'
+        ];
+        if (systemFolders.some(sys => folder.includes(sys))) return false;
+
+        // 2. MICROSOFT STORE & APPX APPS - Skip framework/system Microsoft apps
+        if (/[a-f0-9]{8}-[a-f0-9]{4}-/.test(folder)) return false; // GUID detection
+        if (/[a-z0-9_]{13,}/.test(folder) && folder.includes('microsoft')) return false; // AppX hash
+        const microsoftSystemApps = ['searchui', 'cortana', 'edge', 'dwm', 'iexplore', 'winrar', 'windows.ui'];
+        if (microsoftSystemApps.some(m => name.includes(m))) return false;
+
+        // 3. BLACKLIST: Definite non-games (expanded list)
+        const blacklistPatterns = [
+            // Installers/Uninstallers
+            /^unins\d*\.exe$/,
+            /^setup/i,
+            /installer/i,
+            // Updaters/Patches
+            /^(patch|update|upgrade)/i,
+            /autoupdate/i,
+            /delta\.exe/i,
+            // Helpers & Tools
+            /helper/i,
+            /launcher.*helper/i,
+            /vcredist/i,
+            /dotnet/i,
+            /runtime/i,
+            // Crash/Anticheat
+            /crash.*report/i,
+            /anticheat/i,
+            /antivirus/i,
+            /firewall/i,
+            /security/i,
+            /scanner/i,
+            /malware/i,
+            // Overlays & Services
+            /overlay/i,
+            /service\.exe/i,
+            /svchost/i,
+            // Other system
+            /redistributable/i,
+            /framework/i,
+            /shortcut/i,
+            /readme/i,
+            /license/i,
+            /diagnostic/i,
+            /troubleshoot/i,
+            /support/i
         ];
 
-        // WHITELIST: Known good apps (always include)
+        if (blacklistPatterns.some(pattern => pattern.test(name))) return false;
+
+        // 4. GUID-LIKE OR RANDOM NAMES
+        if (/^[a-f0-9]{8,}\.exe$/i.test(exeName)) return false; // Pure hex GUID
+        if (/^[a-f0-9-]{36}\.exe$/i.test(exeName)) return false; // Full GUID
+        if (/^\d{10,}\.exe$/i.test(exeName)) return false; // Long numeric names
+
+        // 5. VERY GENERIC/SHORT NAMES
+        const genericNames = ['app.exe', 'main.exe', 'run.exe', 'start.exe', 'launcher.exe', 'game.exe'];
+        if (genericNames.includes(exeName)) return false;
+
+        // 6. TOO MANY NUMBERS/SPECIAL CHARS (likely utilities)
+        const digitCount = (name.match(/\d/g) || []).length;
+        const specialCount = (name.match(/[^a-z0-9_\-\.]/g) || []).length;
+        if (digitCount > 5 || specialCount > 3) return false; // Too many digits/special chars = likely random tool
+
+        // 7. COMMON TOOL PATTERNS
+        const toolKeywords = [
+            'winrar', 'winzip', '7z', 'notepad', 'paint', 'calc', 'explorer',
+            'powershell', 'cmd', 'bat', 'dll', 'sys', 'drv', 'scr',
+            'vbscript', 'javascript', 'perl', 'python', 'java',
+            'installer', 'editor', 'viewer', 'converter', 'codec',
+            'plugin', 'extension', 'module', 'addin'
+        ];
+        if (toolKeywords.some(tool => name.includes(tool))) return false;
+
+        // ===== WHITELIST (ALWAYS ACCEPT) =====
         const knownApps = [
             'spotify', 'discord', 'slack', 'vscode', 'chrome', 'firefox',
             'chatgpt', 'telegram', 'whatsapp', 'zoom', 'teams', 'obs',
             'photoshop', 'illustrator', 'premiere', 'aftereffects',
             'notion', 'obsidian', 'blender', 'unity', 'unreal', 'code'
         ];
-
-        // Check whitelist first
         if (knownApps.some(app => name.includes(app))) return true;
 
-        // Check blacklist
-        if (rejectPatterns.some(pattern => {
-            if (pattern instanceof RegExp) return pattern.test(name);
-            return name.includes(pattern);
-        })) return false;
+        // ===== ACCEPT if passes heuristics =====
+        // Name too short = likely not a main game executable
+        if (name.length < 4) return false;
 
-        // Reject if folder contains GUID codes or AppX publisher hashes (e.g., _8wekyb3d8bbwe)
-        if (/[a-f0-9]{8}-[a-f0-9]{4}-/.test(folder)) return false;
-        if (/[a-z0-9]{13,}/.test(folder) && folder.includes('microsoft')) return false; // AppX hash detection
+        // Prefer names that are mostly alphabetic (clean names like "Elden Ring.exe")
+        const alphaRatio = (name.match(/[a-z]/gi) || []).length / name.length;
+        if (alphaRatio < 0.6) return false; // Less than 60% alphabetic = likely junk
 
-        // Specific Windows folder exclusion (allow "Program Files" but not "C:\Windows")
-        const winDir = process.env.SystemRoot ? process.env.SystemRoot.toLowerCase() : 'c:\\windows';
-        if (folder.startsWith(winDir)) return false;
-
-        // Reject if name is too short or generic
-        if (name.length < 4 || ['app.exe', 'main.exe', 'run.exe'].includes(name)) return false;
-
-        // ACCEPT if name is clean (letters, max 3 numbers, max 2 special chars)
-        const digitCount = (name.match(/\d/g) || []).length;
-        const specialCount = (name.match(/[^a-z0-9]/g) || []).length;
-
-        return digitCount <= 3 && specialCount <= 2;
+        return true;
     }
 
     deduplicateApps(apps) {
@@ -145,6 +334,16 @@ class GameScanner {
         const apps = [];
         try {
             if (!fs.existsSync(folderPath)) return [];
+            
+            // Hard stop: Never recurse into dangerous system directories
+            const dangerousPaths = [
+                'c:\\windows', 'c:\\programdata', 'c:\\program files\\common files',
+                'c:\\system volume information', 'c:\\$recycle.bin',
+                'winsx', 'system32', 'syswow64', 'drivers'
+            ];
+            const lowerPath = folderPath.toLowerCase();
+            if (dangerousPaths.some(danger => lowerPath.includes(danger))) return [];
+
             const entries = fs.readdirSync(folderPath, { withFileTypes: true });
 
             for (const entry of entries) {
@@ -153,8 +352,8 @@ class GameScanner {
                 if (entry.isDirectory()) {
                     // Skip system/hidden/junk folders
                     if (entry.name.startsWith('.') || entry.name.startsWith('$')) continue;
-                    const skipDirs = ['node_modules', 'temp', 'cache', 'windows', 'system32'];
-                    if (skipDirs.includes(entry.name.toLowerCase())) continue;
+                    const skipDirs = ['node_modules', 'temp', 'cache', 'windows', 'system32', 'programdata', 'syswow64', 'winsxs', 'drivers'];
+                    if (skipDirs.some(skip => entry.name.toLowerCase().includes(skip))) continue;
 
                     // Recursively scan subdirectories
                     apps.push(...await this.scanFolder(fullPath, depth + 1, maxDepth));
@@ -168,6 +367,7 @@ class GameScanner {
                             executablePath: fullPath,
                             installPath: folderPath,
                             launcher: 'desktop',
+                            itemType: 'app', // NEW: Default custom apps to 'app' type
                             coverImage: null,
                             backgroundImage: null
                         });
@@ -182,22 +382,43 @@ class GameScanner {
     }
 
     async deepScanPC() {
-        console.log('Starting deep scan of typical app and game directories...');
+        console.log('Starting deep scan of typical game directories (safe mode)...');
         const apps = [];
         const drives = ['C:', 'D:', 'E:', 'F:'];
+        
+        // ONLY scan game-specific directories, never system/ProgramData
         const commonDirs = [
-            'Games', 'Game', 'My Games',
+            'Games', 
+            'Game', 
+            'My Games',
             'SteamLibrary\\steamapps\\common',
             'Program Files\\Epic Games',
             'Program Files (x86)\\Ubisoft\\Ubisoft Game Launcher\\games',
-            'Program Files', 'Program Files (x86)',
-            path.join(os.homedir(), 'AppData', 'Local'),
-            path.join(os.homedir(), 'AppData', 'Roaming')
+            // NOTE: We intentionally SKIP raw "Program Files" and "Program Files (x86)" to avoid picking up utilities
+            path.join(os.homedir(), 'Games'),
+            path.join(os.homedir(), 'AppData', 'Local', 'Games')
+        ];
+
+        // NEVER scan these paths - they are pure system folders
+        const neverScan = [
+            'c:\\windows',
+            'c:\\programdata',
+            'c:\\program files',
+            'c:\\program files (x86)',
+            'c:\\system volume information'
         ];
 
         for (const drive of drives) {
             for (const dir of commonDirs) {
                 const fullPath = (dir.includes(':')) ? dir : path.join(drive, dir);
+                
+                // Check if we should scan this path
+                const lowerPath = fullPath.toLowerCase();
+                if (neverScan.some(never => lowerPath.startsWith(never))) {
+                    console.log(`Skipping dangerous path: ${fullPath}`);
+                    continue;
+                }
+
                 if (fs.existsSync(fullPath)) {
                     try {
                         const folders = fs.readdirSync(fullPath);
@@ -217,6 +438,7 @@ class GameScanner {
                                             executablePath: mainExePath,
                                             installPath: folderPath,
                                             launcher: 'manual',
+                                            itemType: 'app', // NEW: Default manual scans to 'app' unless verified
                                             coverImage: null,
                                             backgroundImage: null
                                         });
@@ -453,6 +675,8 @@ class GameScanner {
             executablePath: gamePath,
             installPath: gamePath,
             launcher: 'steam',
+            itemType: 'game', // NEW: Steam games are always games
+            steamAppId: appId, // NEW: Store appId for stats fetching
             coverImage: `https://steamcdn-a.akamaihd.net/steam/apps/${appId}/library_600x900_2x.jpg`,
             backgroundImage: `https://steamcdn-a.akamaihd.net/steam/apps/${appId}/library_hero.jpg`
         };
@@ -501,6 +725,7 @@ class GameScanner {
                         executablePath: path.join(data.InstallLocation, data.LaunchExecutable || ''),
                         installPath: data.InstallLocation,
                         launcher: 'epic',
+                        itemType: 'game', // NEW: Epic games are always games
                         epicAppName: data.AppName, // CRITICAL: This is needed for the protocol launch!
                         coverImage: null,
                         backgroundImage: null
@@ -547,6 +772,7 @@ class GameScanner {
                     executablePath: app.InstallLocation,
                     installPath: app.InstallLocation,
                     launcher: 'xbox',
+                    itemType: 'game', // NEW: Xbox games are always games
                     packageFamilyName: app.PackageFamilyName,
                     coverImage: null,
                     backgroundImage: null
@@ -585,6 +811,7 @@ class GameScanner {
                                         executablePath: installPath,
                                         installPath: installPath,
                                         launcher: 'ea',
+                                        itemType: 'game', // NEW: EA games are always games
                                         eaId: id,
                                         coverImage: null,
                                         backgroundImage: null
@@ -622,6 +849,7 @@ class GameScanner {
                             executablePath: exes[0] || null,
                             installPath: gamePath,
                             launcher: 'ubisoft',
+                            itemType: 'game', // NEW: Ubisoft games are always games
                             coverImage: null,
                             backgroundImage: null
                         });
@@ -679,6 +907,7 @@ class GameScanner {
                                 executablePath: path.join(gamePath, info.playTasks?.[0]?.path || ''),
                                 installPath: gamePath,
                                 launcher: 'gog',
+                                itemType: 'game', // NEW: GOG games are always games
                                 coverImage: null,
                                 backgroundImage: null
                             });
@@ -690,6 +919,7 @@ class GameScanner {
                                 executablePath: null,
                                 installPath: gamePath,
                                 launcher: 'gog',
+                                itemType: 'game', // NEW: GOG games are always games
                                 coverImage: null,
                                 backgroundImage: null
                             });

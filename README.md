@@ -96,7 +96,7 @@ This will create a portable Windows executable in the `dist` folder.
 
 ## 📝 Notes
 
-- **AI was used in this project** to assist with development.
+- **AI was used in this project**.
 - **Game Detection** might detect `.exe` files that are not actually games.
 - **Statistics tracking** begins from when you first launch a game through OmLx Atlas.
 

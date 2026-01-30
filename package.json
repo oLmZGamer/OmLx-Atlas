@@ -1,6 +1,6 @@
 {
   "name": "omlx-atlas",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "A unified game library with cinematic console-style UI",
   "main": "index.js",
   "scripts": {
@@ -32,12 +32,15 @@
     "epic",
     "xbox"
   ],
-  "author": "Game Library Team",
-  "license": "MIT",
+  "author": "OmLx Studios",
+  "license": "Self-Made",
   "type": "commonjs",
   "dependencies": {
+    "axios": "^1.13.4",
+    "discord-rpc": "^4.0.1",
     "dist": "^0.1.2",
-    "electron-store": "^10.0.0"
+    "electron-store": "^10.0.0",
+    "epicgames-client": "^2.0.25"
   },
   "devDependencies": {
     "electron": "^34.0.0",

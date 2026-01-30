@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atlas Spotlight</title>
+    <style>
+        :root {
+            --bg-glass: rgba(10, 10, 15, 0.85);
+            --border: rgba(100, 200, 255, 0.3);
+            --text: #ffffff;
+            --accent: #00a2ff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: transparent;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .spotlight-box {
+            width: 100%;
+            height: 80px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            animation: slideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .search-icon {
+            color: var(--accent);
+            margin-right: 15px;
+            filter: drop-shadow(0 0 5px var(--accent));
+        }
+
+        input {
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-size: 24px;
+            flex: 1;
+            outline: none;
+            font-weight: 300;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        #results {
+            position: absolute;
+            top: 90px;
+            left: 0;
+            width: 100%;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .result-item {
+            padding: 12px 20px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .result-item:hover,
+        .result-item.selected {
+            background: rgba(0, 162, 255, 0.2);
+        }
+
+        .result-item img {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            margin-right: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="spotlight-box">
+        <svg class="search-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+        </svg>
+        <input type="text" id="searchInput" placeholder="Fast Search Atlas..." autofocus>
+    </div>
+    <div id="results"></div>
+
+    <script src="spotlight.js"></script>
+</body>
+
+</html>

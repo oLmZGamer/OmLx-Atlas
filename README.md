@@ -1,6 +1,19 @@
 # 🌌 OmLx Atlas
 
-A high-performance, unified game library with a cinematic, console-style interface. OmLx Atlas brings all your games from various launchers into one beautiful, organized space.
+<p align="center">
+  <img src="atlascardprev.png" alt="OmLx Atlas Logo" width="200"/>
+</p>
+
+<p align="center">
+  <strong>A high-performance, unified game library with a cinematic, console-style interface.</strong><br>
+  OmLx Atlas brings all your games from various launchers into one beautiful, organized space.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-1.2.2-blue?style=for-the-badge" alt="Version"/>
+  <img src="https://img.shields.io/badge/platform-Windows-0078D6?style=for-the-badge&logo=windows" alt="Platform"/>
+  <img src="https://img.shields.io/badge/Electron-34.0.0-47848F?style=for-the-badge&logo=electron" alt="Electron"/>
+</p>
 
 ---
 
@@ -21,11 +34,18 @@ OmLx Atlas is packed with features designed to give you the ultimate gaming expe
 - **Theme System**: Choose from multiple curated themes including **Violet (Default)**, **Emerald**, **Amber**, **Crimson**, **Azure**, and **Midnight**.
 - **Custom Wallpapers**: Upload your own background images to personalize the dashboard.
 
-### 📊 Built-in Game Tracking (Implemented but under refinement)
+### 📊 Game Tracking & Statistics
 - **Playtime Tracking**: Automatically monitors how long you spend in each game.
 - **Last Played**: Keeps track of your most recent gaming sessions.
-- **Achievement Integration**: View your progress and achievements for supported games directly in the app.
-- **Statistics Panel**: A dedicated view for each game showing your status and progress.
+- **Recently Played Section**: Quick access to your most recent games on the main dashboard.
+- **Statistics Dashboard**: A dedicated statistics page showing your gaming habits, total playtime, and activity overview.
+- **Per-Game Statistics**: View detailed stats for each game including total hours played and session history.
+
+### 🗂️ Categories & Organization
+- **Custom Categories**: Create your own categories to organize games your way.
+- **Category Filters**: Quickly filter your library by category from the sidebar.
+- **Auto-Assignment**: Games can be automatically assigned to categories upon discovery.
+- **Multi-Select Mode**: Select multiple games at once to perform batch actions like moving to categories.
 
 ### 🛠️ Advanced Management
 - **Artwork Search**: Automatically find and apply high-quality game covers and background art from online sources.
@@ -33,6 +53,7 @@ OmLx Atlas is packed with features designed to give you the ultimate gaming expe
 - **Fuzzy Search**: Find any game instantly with a smart, lightning-fast search bar.
 - **Launcher Assignment**: Manually change or correct the launcher category for any game in your library.
 - **Folder Quick-Open**: Jump directly to a game's installation folder with one click.
+- **Active Folder Display**: View and manage currently active scan folders.
 
 ### ⌨️ Navigation & Controls
 - **Keyboard Shortcuts**: Fully navigable via keyboard (Arrows for grid, `Ctrl+F` for search, etc.).
@@ -40,10 +61,45 @@ OmLx Atlas is packed with features designed to give you the ultimate gaming expe
 - **Sound Effects**: Immersive audio feedback for navigation, clicking, and launching games.
 
 ---
-### Notes
 
-- **Ai was used in this project.**
-- **Detecting Games/apps might detect exe files that are not actually games.**
+## 🚀 Getting Started
+
+### Prerequisites
+- Windows 10/11
+- Node.js (v18 or higher recommended)
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/oLmZGamer/OmLx-Atlas.git
+   cd OmLx-Atlas
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Run the application:
+   ```bash
+   npm start
+   ```
+
+### Building for Distribution
+```bash
+npm run dist
+```
+This will create a portable Windows executable in the `dist` folder.
+
+---
+
+## 📝 Notes
+
+- **AI was used in this project** to assist with development.
+- **Game Detection** might detect `.exe` files that are not actually games.
+- **Statistics tracking** begins from when you first launch a game through OmLx Atlas.
+
 ---
 
 ## 📜 License & Usage Rights
@@ -65,5 +121,13 @@ This software is provided under a custom permission structure. By using or modif
 *THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY.*
 
 ---
-*Created with ❤️ for gamers.*
 
+## 🤝 Contributing
+
+While this is primarily a personal project, suggestions and feedback are welcome! Feel free to open an issue for bug reports or feature requests.
+
+---
+
+<p align="center">
+  <strong>Created with ❤️ for gamers by OmLx Studios</strong>
+</p>

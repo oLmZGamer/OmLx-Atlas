@@ -38,6 +38,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // NEW: External links (Feedback button, etc.)
     openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
 
+    // NEW: ItemType management
+    updateItemType: (gameId, itemType) => ipcRenderer.invoke('games:updateItemType', gameId, itemType),
+
+    // NEW: Stats refresh
+    refreshGameStats: (game) => ipcRenderer.invoke('games:refreshStats', game),
+
+    // NEW: Clear all games
+    clearAllGames: () => ipcRenderer.invoke('games:clearAll'),
+
+    // NEW: External links (Feedback button, etc.)
+    openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
+
     // Real-time events
     onGamesUpdated: (callback) => ipcRenderer.on('games:updated', (event, game) => callback(game)),
 

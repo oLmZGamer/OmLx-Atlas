@@ -12,6 +12,7 @@
   "build": {
     "appId": "com.omlx.atlas",
     "productName": "OmLx Atlas",
+    "npmRebuild": false,
     "directories": {
       "output": "dist"
     },
